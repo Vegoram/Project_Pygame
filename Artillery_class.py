@@ -3,7 +3,7 @@ import os
 import sys
 
 
-SPRITE_SIDE = 100
+SPRITE_SIDE = 200
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -55,19 +55,26 @@ class Artillery(AnimatedSprite):
 
 if __name__ == '__main__':
     pygame.init()
-    size = width, height = 120, 120
+    size = width, height = 220, 220
     screen = pygame.display.set_mode(size)
     all_sprites = pygame.sprite.Group()
     artillery = Artillery(10, 10, True, all_sprites)
+    for _ in range(8):
+        all_sprites.update()
     screen.fill(pygame.Color('#ffffff'))
     pygame.display.flip()
     clock = pygame.time.Clock()
     running = True
+    counter = 10
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-        artillery.update()
+            elif event.type == pygame.MOUSEBUTTONDOWN and counter >= 8:
+                counter = 0
+        if counter < 8:
+            artillery.update()
+            counter += 1
         screen.fill(pygame.Color('#ffffff'))
         all_sprites.draw(screen)
         pygame.display.flip()
