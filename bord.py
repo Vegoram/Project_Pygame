@@ -197,8 +197,8 @@ clock = pygame.time.Clock()
 
 running = True
 while running:
-    board = Board(15, 15)
-    board.set_view(25, 25, 50)
+    board = Board(10, 10)
+    board.set_view(100,100, 60)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
