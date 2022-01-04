@@ -2,7 +2,7 @@ from library import *
 
 
 pygame.init()
-screen_size = (1000, 1000)
+screen_size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode(screen_size)
 FPS = 40
 clock = pygame.time.Clock()
@@ -16,6 +16,7 @@ field.add_unit('Cannon', 9, 9, True)
 field.add_unit('TankSmall', 4, 5)
 field.add_unit('TankLarge', 2, 8)
 field.add_unit('TankMedium', 1, 1, True)
+field.add_unit('Cannon', 0, 1, True)
 field.render()
 pygame.display.flip()
 running = True
@@ -24,8 +25,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            field.tap_dispatcher(event.pos)
+            field.tap_dispatcher(event.pos, event.button)
     field.update()
+    screen.fill((0, 0, 0))
     field.render()
     clock.tick(FPS)
     pygame.display.flip()

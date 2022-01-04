@@ -1,3 +1,4 @@
+import random
 import pygame
 import os
 import sys
@@ -5,6 +6,11 @@ import sys
 
 SPRITE_SIDE = 90
 TILE_IMAGES = {'.': 'empty.png', '#': 'mountain.png'}
+WIDTH = HEIGHT = 1000
+SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
+pygame.init()
+screen_size = (WIDTH, HEIGHT)
+screen = pygame.display.set_mode(screen_size)
 
 
 def terminate():
@@ -28,6 +34,42 @@ def load_image(name, color_key=None):
     return image
 
 
+class Loader:
+    def load_particle(self, name, color_key=None):
+        fullname = os.path.join('data', 'images', 'particles', name)
+        return self.main_load(fullname, color_key)
+    
+    def load_tile(self, name, color_key=None):
+        fullname = os.path.join('data', 'images', 'tiles', name)
+        return self.main_load(fullname, color_key)
+
+    def load_sprite_sheet(self, name, color_key=None):
+        fullname = os.path.join('data', 'images', 'sprites', name)
+        return self.main_load(fullname, color_key)
+    
+    def main_load(self, fullname, color_key):
+        if not os.path.isfile(fullname):
+            print(f"Файл с изображением '{fullname}' не найден")
+            sys.exit()
+        image = pygame.image.load(fullname)
+        if color_key is not None:
+            image = image.convert()
+            if color_key == -1:
+                color_key = image.get_at((0, 0))
+            image.set_colorkey(color_key)
+        else:
+            image = image.convert_alpha()
+        return image
+        
+
+ldr = Loader()
+parts = []
+for imag in [ldr.load_particle('piece_1.png'), ldr.load_particle('piece_2.png'), ldr.load_particle('piece_3.png')]:
+    for scal in (32, 35, 37):
+        parts.append(pygame.transform.scale(imag, (scal, scal)))
+PARTICLES = parts.copy()
+
+
 class SpriteGroup(pygame.sprite.Group):
     def __init__(self):
         super().__init__()
@@ -36,7 +78,7 @@ class SpriteGroup(pygame.sprite.Group):
         pass
 
 
-class AnimatedSprite(pygame.sprite.Sprite):
+class Unit(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y, *groups):
         super().__init__(*groups)
         self.frames = []
@@ -44,6 +86,13 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (SPRITE_SIDE, SPRITE_SIDE))
         self.rect = self.rect.move(x, y)
+        self.health = None
+        self.attack = None
+        self.speed = None
+        self.set_stats()
+
+    def set_stats(self):
+        pass
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -57,57 +106,115 @@ class AnimatedSprite(pygame.sprite.Sprite):
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = pygame.transform.scale(self.frames[self.cur_frame], (SPRITE_SIDE, SPRITE_SIDE))
-        
 
-class Artillery(AnimatedSprite):
+    def deal_damage(self, enemy):
+        enemy.health -= self.attack
+
+    def die(self, *groups):
+        x_pos = self.rect.x
+        y_pos = self.rect.y
+        create_particles((x_pos, y_pos), 7, *groups)
+        self.kill()
+
+
+class Particle(pygame.sprite.Sprite):
+    def __init__(self, gravity, pos, dx, dy, *groups):
+        super().__init__(*groups)
+        self.image = random.choice(PARTICLES)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = gravity
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if not self.rect.colliderect(SCREEN_RECT):
+            self.kill()
+
+
+def create_particles(position, particle_count, *groups):
+    speeds_x = range(-10, 10)
+    speeds_y = range(-15, -5)
+    for _ in range(particle_count):
+        Particle(1, position, random.choice(speeds_x), random.choice(speeds_y), *groups)
+
+
+class Artillery(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
-            sheet = load_image('images/sprites/Artillery_1/Artillery_1_enemy.png')
+            sheet = ldr.load_sprite_sheet('Artillery_1_enemy.png')
         else:
-            sheet = load_image('images/sprites/Artillery_1/Artillery_1.png')
+            sheet = ldr.load_sprite_sheet('Artillery_1.png')
         super().__init__(sheet, 4, 2, x, y, *groups)
+
+    def set_stats(self):
+        self.health = 1
+        self.attack = 1
+        self.speed = 0
         
         
-class Cannon(AnimatedSprite):
+class Cannon(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
-            sheet = load_image('images/sprites/Cannon/Cannon_enemy.png')
+            sheet = ldr.load_sprite_sheet('Cannon_enemy.png')
         else:
-            sheet = load_image('images/sprites/Cannon/Cannon.png')
+            sheet = ldr.load_sprite_sheet('Cannon.png')
         super().__init__(sheet, 4, 3, x, y, *groups)
+
+    def set_stats(self):
+        self.health = 1
+        self.attack = 1
+        self.speed = 0
         
         
-class TankLarge(AnimatedSprite):
+class TankLarge(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
-            sheet = load_image('images/sprites/Tank_large/Tank_large_enemy.png')
+            sheet = ldr.load_sprite_sheet('Tank_large_enemy.png')
         else:
-            sheet = load_image('images/sprites/Tank_large/Tank_large.png')
+            sheet = ldr.load_sprite_sheet('Tank_large.png')
         super().__init__(sheet, 5, 2, x, y, *groups)
+
+    def set_stats(self):
+        self.health = 1
+        self.attack = 1
+        self.speed = 0
         
         
-class TankMedium(AnimatedSprite):
+class TankMedium(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
-            sheet = load_image('images/sprites/Tank_medium/Tank_medium_enemy.png')
+            sheet = ldr.load_sprite_sheet('Tank_medium_enemy.png')
         else:
-            sheet = load_image('images/sprites/Tank_medium/Tank_medium.png')
+            sheet = ldr.load_sprite_sheet('Tank_medium.png')
         super().__init__(sheet, 3, 3, x, y, *groups)
+
+    def set_stats(self):
+        self.health = 1
+        self.attack = 1
+        self.speed = 0
         
         
-class TankSmall(AnimatedSprite):
+class TankSmall(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
-            sheet = load_image('images/sprites/Tank_small/Tank_small_enemy.png')
+            sheet = ldr.load_sprite_sheet('Tank_small_enemy.png')
         else:
-            sheet = load_image('images/sprites/Tank_small/Tank_small.png')
+            sheet = ldr.load_sprite_sheet('Tank_small.png')
         super().__init__(sheet, 4, 2, x, y, *groups)
+
+    def set_stats(self):
+        self.health = 1
+        self.attack = 1
+        self.speed = 0
 
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, char, tile_side, x, y, *groups):
         super().__init__(*groups)
-        self.image = pygame.transform.scale(load_image('images/tiles/' + TILE_IMAGES[char]), (tile_side, tile_side))
+        self.image = pygame.transform.scale(ldr.load_tile(TILE_IMAGES[char]), (tile_side, tile_side))
         self.rect = self.image.get_rect().move(x, y)
 
 
@@ -119,6 +226,7 @@ class BattleField:
         self.left, self.top = left_top
         self.tiles_group = SpriteGroup()
         self.units_group = SpriteGroup()
+        self.particles_group = SpriteGroup()
         self.all_sprites = SpriteGroup()
         self.own_surface = scr
         self.units_data = {}
@@ -159,13 +267,21 @@ class BattleField:
             unit = [TankSmall(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 8, 8]
         self.units_data[tuple([cell_x, cell_y])] = unit
 
-    def tap_dispatcher(self, mouse_pos):
+    def tap_dispatcher(self, mouse_pos, type):
         cell = self.tap_converter(mouse_pos)
-        if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
-            self.units_data[cell][1] = 0
+        if type == 3:
+            if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
+                self.units_data[cell][0].health = 0
+        elif type == 1:
+            if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
+                self.units_data[cell][1] = 0
 
     def update(self):
         for key in list(self.units_data.keys()):
-            if self.units_data[key][1] < self.units_data[key][2]:
+            if self.units_data[key][0].health <= 0:
+                self.units_data[key][0].die(self.particles_group, self.all_sprites)
+                del self.units_data[key]
+            elif self.units_data[key][1] < self.units_data[key][2]:
                 self.units_data[key][1] += 1
                 self.units_data[key][0].update()
+        self.particles_group.update()
