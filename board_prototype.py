@@ -21,22 +21,32 @@ field.render()
 pygame.display.flip()
 running = True
 move = False
+atac = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             field.tap_dispatcher(event.pos, event.button)
-            if event.button == 2:
+            print(event.button)
+            if event.button == 1:
+                if atac:
+                    field.atacing(hed1, event.pos)
+                    atac = False
+                else:
+                    field.pricel(event.pos)
+                    atac = True
+                    hed1 = event.pos
+            if event.button == 3:
                 if move:
                     field.moving(hed1, event.pos)
                     move = False
                 else:
                     move = True
                     hed1 = event.pos
+                    field.mox(event.pos)
             else:
                 move = False
-            print(event.button)
     field.update()
     screen.fill((0, 0, 0))
     field.render()
