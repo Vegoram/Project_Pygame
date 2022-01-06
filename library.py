@@ -89,6 +89,7 @@ class Unit(pygame.sprite.Sprite):
         self.health = None
         self.attack = None
         self.speed = None
+        self.mov = None
         self.set_stats()
 
     def set_stats(self):
@@ -115,6 +116,10 @@ class Unit(pygame.sprite.Sprite):
         y_pos = self.rect.y
         create_particles((x_pos, y_pos), 7, *groups)
         self.kill()
+
+    def move(self, pos1, pos2):
+        self.rect.x = pos1
+        self.rect.y = pos2
 
 
 class Particle(pygame.sprite.Sprite):
@@ -153,6 +158,7 @@ class Artillery(Unit):
         self.health = 1
         self.attack = 1
         self.speed = 0
+        self.mov = 3
         
         
 class Cannon(Unit):
@@ -167,6 +173,7 @@ class Cannon(Unit):
         self.health = 1
         self.attack = 1
         self.speed = 0
+        self.mov = 3
         
         
 class TankLarge(Unit):
@@ -181,6 +188,7 @@ class TankLarge(Unit):
         self.health = 1
         self.attack = 1
         self.speed = 0
+        self.mov = 3
         
         
 class TankMedium(Unit):
@@ -195,6 +203,7 @@ class TankMedium(Unit):
         self.health = 1
         self.attack = 1
         self.speed = 0
+        self.mov = 3
         
         
 class TankSmall(Unit):
@@ -209,6 +218,9 @@ class TankSmall(Unit):
         self.health = 1
         self.attack = 1
         self.speed = 0
+        self.mov = 3
+
+
 
 
 class Tile(pygame.sprite.Sprite):
@@ -275,6 +287,17 @@ class BattleField:
         elif type == 1:
             if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
                 self.units_data[cell][1] = 0
+
+    def moving(self, pos1, pos2):
+        cell1 = self.tap_converter(pos1)
+        cell2 = self.tap_converter(pos2)
+        pos_x = cell2[0] * self.cell_size + self.left
+        pos_y = cell2[1] * self.cell_size + self.top
+        print(cell2)
+        print(cell1)
+        if cell1 and cell2 and (cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2]):
+            self.units_data[cell1][0].move(pos_x, pos_y)
+            self.units_data[cell2] = self.units_data[cell1]
 
     def update(self):
         for key in list(self.units_data.keys()):
