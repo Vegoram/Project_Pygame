@@ -5,7 +5,7 @@ import sys
 
 
 SPRITE_SIDE = 90
-TILE_IMAGES = {'.': 'empty.png', '#': 'mountain.png'}
+TILE_IMAGES = {'.': 'empty.png', '#': 'mountain.png', 'f': 'empty2.png'}
 WIDTH = HEIGHT = 1000
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 pygame.init()
@@ -122,6 +122,7 @@ class Unit(pygame.sprite.Sprite):
         self.rect.y = pos2
 
 
+
 class Particle(pygame.sprite.Sprite):
     def __init__(self, gravity, pos, dx, dy, *groups):
         super().__init__(*groups)
@@ -153,12 +154,15 @@ class Artillery(Unit):
         else:
             sheet = ldr.load_sprite_sheet('Artillery_1.png')
         super().__init__(sheet, 4, 2, x, y, *groups)
+        self.is_enemy = is_enemy
+    def get_enemi(self):
+        return self.is_enemy
 
     def set_stats(self):
         self.health = 1
         self.attack = 1
         self.speed = 0
-        self.mov = 3
+        self.dal = 2
         
         
 class Cannon(Unit):
@@ -168,12 +172,16 @@ class Cannon(Unit):
         else:
             sheet = ldr.load_sprite_sheet('Cannon.png')
         super().__init__(sheet, 4, 3, x, y, *groups)
+        self.is_enemy = is_enemy
+
+    def get_enemi(self):
+        return self.is_enemy
 
     def set_stats(self):
         self.health = 1
         self.attack = 1
         self.speed = 0
-        self.mov = 3
+        self.dal = 2
         
         
 class TankLarge(Unit):
@@ -183,12 +191,16 @@ class TankLarge(Unit):
         else:
             sheet = ldr.load_sprite_sheet('Tank_large.png')
         super().__init__(sheet, 5, 2, x, y, *groups)
+        self.is_enemy = is_enemy
+
+    def get_enemi(self):
+        return self.is_enemy
 
     def set_stats(self):
         self.health = 1
         self.attack = 1
         self.speed = 0
-        self.mov = 3
+        self.dal = 2
         
         
 class TankMedium(Unit):
@@ -198,12 +210,16 @@ class TankMedium(Unit):
         else:
             sheet = ldr.load_sprite_sheet('Tank_medium.png')
         super().__init__(sheet, 3, 3, x, y, *groups)
+        self.is_enemy = is_enemy
+
+    def get_enemi(self):
+        return self.is_enemy
 
     def set_stats(self):
         self.health = 1
         self.attack = 1
         self.speed = 0
-        self.mov = 3
+        self.dal = 2
         
         
 class TankSmall(Unit):
@@ -213,13 +229,16 @@ class TankSmall(Unit):
         else:
             sheet = ldr.load_sprite_sheet('Tank_small.png')
         super().__init__(sheet, 4, 2, x, y, *groups)
+        self.is_enemy = is_enemy
+
+    def get_enemi(self):
+        return self.is_enemy
 
     def set_stats(self):
         self.health = 1
         self.attack = 1
         self.speed = 0
-        self.mov = 3
-
+        self.dalatak = 2
 
 
 
@@ -229,10 +248,20 @@ class Tile(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(ldr.load_tile(TILE_IMAGES[char]), (tile_side, tile_side))
         self.rect = self.image.get_rect().move(x, y)
 
+class Tile2(pygame.sprite.Sprite):
+    def __init__(self, tile_side, x, y, *groups):
+        self.x = x
+        self.y = y
+        super().__init__(*groups)
+        self.image = pygame.transform.scale(ldr.load_tile('ramka_red.png'), (tile_side, tile_side))
+        self.rect = self.image.get_rect().move(x, y)
+    def get_cor(self):
+        return tuple([self.x, self.y])
 
 class BattleField:
     def __init__(self, map_file, cell_size, left_top, scr):
         self.data = [[None] * 10 for _ in range(10)]
+        self.data2 = [[None] * 10 for _ in range(10)]
         self.height = self.width = 10 * cell_size
         self.cell_size = cell_size
         self.left, self.top = left_top
@@ -240,21 +269,24 @@ class BattleField:
         self.units_group = SpriteGroup()
         self.particles_group = SpriteGroup()
         self.all_sprites = SpriteGroup()
+        self.atak = SpriteGroup()
         self.own_surface = scr
         self.units_data = {}
 
         with open('data/maps/' + map_file + '.btlm') as file:
-            tile_arr = list(map(lambda x: list(x.strip()), file.readlines()))
+            self.tile_arr = list(map(lambda x: list(x.strip()), file.readlines()))
+        self.atakdat = self.tile_arr[:]
 
-        for line in range(len(tile_arr)):
-            for column in range(len(tile_arr)):
-                self.data[line][column] = Tile(tile_arr[line][column], cell_size,
+        for line in range(len(self.tile_arr)):
+            for column in range(len(self.tile_arr)):
+                self.data[line][column] = Tile(self.tile_arr[line][column], cell_size,
                                                self.left + self.cell_size * column,
                                                self.top + self.cell_size * line,
                                                self.tiles_group, self.all_sprites)
 
     def render(self):
         self.all_sprites.draw(self.own_surface)
+        self.atak.draw(self.own_surface)
 
     def tap_converter(self, tap_pos):
         find_x = (tap_pos[0] - self.left) // self.cell_size
@@ -281,20 +313,36 @@ class BattleField:
 
     def tap_dispatcher(self, mouse_pos, type):
         cell = self.tap_converter(mouse_pos)
+        for i in self.atak:
+            i.kill()
+
         if type == 3:
             if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
                 self.units_data[cell][0].health = 0
         elif type == 1:
             if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
-                self.units_data[cell][1] = 0
+                dal = self.units_data[cell][0].dal
+                for column in range(cell[0] - dal, cell[0] + dal + 1):
+                    for line in range(cell[1] - dal, cell[1] + dal + 1):
+                        h = tuple([column, line])
+                        if line < 0 or column < 0 or line > 9 or column > 9 or h == cell:
+                            pass
+                        else:
+                            if h in list(self.units_data.keys()) and self.units_data[h][0].get_enemi() != self.units_data[cell][0].get_enemi():
+                                self.data2[line][column] = Tile2(self.cell_size,
+                                                             self.left + self.cell_size * column,
+                                                             self.top + self.cell_size * line,
+                                                             self.tiles_group, self.atak)
+
+
 
     def moving(self, pos1, pos2):
+        for i in self.atak:
+            i.kill()
         cell1 = self.tap_converter(pos1)
         cell2 = self.tap_converter(pos2)
         pos_x = cell2[0] * self.cell_size + self.left
         pos_y = cell2[1] * self.cell_size + self.top
-        print(cell2)
-        print(cell1)
         if cell1 and cell2 and (cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2]):
             self.units_data[cell1][0].move(pos_x, pos_y)
             self.units_data[cell2] = self.units_data[cell1]
