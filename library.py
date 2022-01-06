@@ -338,10 +338,12 @@ class BattleField:
             i.kill()
         cell1 = self.tap_converter(pos1)
         cell2 = self.tap_converter(pos2)
+        dal = self.units_data[cell1][0].dal
         pos_x = cell2[0] * self.cell_size + self.left
         pos_y = cell2[1] * self.cell_size + self.top
         if cell1 and cell2 and (not cell2 in self.units_data.keys()) and (
-                cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2]):
+                cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2])\
+                and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= dal:
             self.units_data[cell1][0].move(pos_x, pos_y)
             self.units_data[cell2] = self.units_data[cell1]
             del self.units_data[cell1]
@@ -350,7 +352,6 @@ class BattleField:
         cell = self.tap_converter(mouse_pos)
         if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
             dal = self.units_data[cell][0].dal
-            self.units_data[cell][1] = 0
             for column in range(cell[0] - dal, cell[0] + dal + 1):
                 for line in range(cell[1] - dal, cell[1] + dal + 1):
                     h = tuple([column, line])
@@ -368,9 +369,13 @@ class BattleField:
             i.kill()
         cell1 = self.tap_converter(pos1)
         cell2 = self.tap_converter(pos2)
-        if cell1 and cell2 and (cell2 in self.units_data.keys()) and (
-                cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2]):
-
+        dal = self.units_data[cell1][0].dal
+        print(dal)
+        print(max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])))
+        if cell1 and cell2 and (cell2 in self.units_data.keys()) and \
+                cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2] \
+                and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= dal and self.units_data[cell1][0].get_enemi() != \
+                                self.units_data[cell2][0].get_enemi():
             self.units_data[cell1][1] = 0
             self.units_data[cell2][0].health = 0
 
@@ -383,3 +388,4 @@ class BattleField:
                 self.units_data[key][1] += 1
                 self.units_data[key][0].update()
         self.particles_group.update()
+
