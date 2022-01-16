@@ -8,47 +8,21 @@ FPS = 40
 clock = pygame.time.Clock()
 pygame.display.set_caption('Стрельботня')
 all_sprites = pygame.sprite.Group()
-field = BattleField('test_map', 90, (50, 50), screen)
-field.add_unit('Cannon', 3, 0)
-field.add_unit('TankSmall', 7, 2, True)
-field.add_unit('Artillery', 3, 3)
-field.add_unit('Cannon', 9, 9, True)
-field.add_unit('TankSmall', 4, 5)
-field.add_unit('TankLarge', 2, 8)
-field.add_unit('TankMedium', 1, 1, True)
-field.add_unit('Cannon', 0, 1, True)
-field.render()
+field = load_game('test_map', screen)
 pygame.display.flip()
 running = True
-move = False
-atac = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             field.tap_dispatcher(event.pos, event.button)
-            print(event.button)
-            if event.button == 1:
-                if atac:
-                    field.atacing(hed1, event.pos)
-                    atac = False
-                else:
-                    field.pricel(event.pos)
-                    atac = True
-                    hed1 = event.pos
-            if event.button == 3:
-                if move:
-                    field.moving(hed1, event.pos)
-                    move = False
-                else:
-                    move = True
-                    hed1 = event.pos
-                    field.mox(event.pos)
-            else:
-                move = False
     field.update()
-    screen.fill((0, 0, 0))
+    try:
+        screen.fill((0, 0, 0))
+    except pygame.error:
+        print('Победа!')
+        terminate()
     field.render()
     clock.tick(FPS)
     pygame.display.flip()

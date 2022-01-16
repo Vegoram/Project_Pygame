@@ -1,4 +1,6 @@
 import random
+import time
+
 import pygame
 import os
 import sys
@@ -88,7 +90,7 @@ class Unit(pygame.sprite.Sprite):
         self.health = None
         self.attack = None
         self.speed = None
-        self.mov = None
+        self.attack_range = None
         self.set_stats()
 
     def set_stats(self):
@@ -154,14 +156,11 @@ class Artillery(Unit):
         super().__init__(sheet, 4, 2, x, y, *groups)
         self.is_enemy = is_enemy
 
-    def get_enemi(self):
-        return self.is_enemy
-
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.speed = 0
-        self.dal = 2
+        self.attack_range = 3
+        self.speed = 3
 
 
 class Cannon(Unit):
@@ -173,14 +172,11 @@ class Cannon(Unit):
         super().__init__(sheet, 4, 3, x, y, *groups)
         self.is_enemy = is_enemy
 
-    def get_enemi(self):
-        return self.is_enemy
-
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.speed = 0
-        self.dal = 2
+        self.attack_range = 5
+        self.speed = 1
 
 
 class TankLarge(Unit):
@@ -192,14 +188,11 @@ class TankLarge(Unit):
         super().__init__(sheet, 5, 2, x, y, *groups)
         self.is_enemy = is_enemy
 
-    def get_enemi(self):
-        return self.is_enemy
-
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.speed = 0
-        self.dal = 2
+        self.attack_range = 3
+        self.speed = 2
 
 
 class TankMedium(Unit):
@@ -211,14 +204,11 @@ class TankMedium(Unit):
         super().__init__(sheet, 3, 3, x, y, *groups)
         self.is_enemy = is_enemy
 
-    def get_enemi(self):
-        return self.is_enemy
-
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.speed = 0
-        self.dal = 2
+        self.attack_range = 3
+        self.speed = 3
 
 
 class TankSmall(Unit):
@@ -230,39 +220,47 @@ class TankSmall(Unit):
         super().__init__(sheet, 4, 2, x, y, *groups)
         self.is_enemy = is_enemy
 
-    def get_enemi(self):
-        return self.is_enemy
-
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.speed = 0
-        self.dal = 2
+        self.attack_range = 1
+        self.speed = 4
 
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, char, tile_side, x, y, *groups):
         super().__init__(*groups)
-        self.image = pygame.transform.scale(ldr.load_tile(TILE_IMAGES[char]), (tile_side, tile_side))
+        self.tile_side = tile_side
+        if char == '#':
+            self.kind = 'Mountain'
+            self.image = pygame.transform.scale(ldr.load_tile('mountain.png'), (self.tile_side, self.tile_side))
+        else:
+            self.kind = 'Empty'
+            self.image = pygame.transform.scale(ldr.load_tile('empty.png'), (self.tile_side, self.tile_side))
         self.rect = self.image.get_rect().move(x, y)
 
+    def __str__(self):
+        return self.kind
+        
+    def normal(self):
+        if self.kind != 'Mountain':
+            self.image = pygame.transform.scale(ldr.load_tile('empty.png'), (self.tile_side, self.tile_side))
+        
+    def target(self):
+        if self.kind != 'Mountain':
+            self.image = pygame.transform.scale(ldr.load_tile('empty_target.png'), (self.tile_side, self.tile_side))
+        
+    def move(self):
+        if self.kind != 'Mountain':
+            self.image = pygame.transform.scale(ldr.load_tile('empty_move.png'), (self.tile_side, self.tile_side))
 
-class Tile2(pygame.sprite.Sprite):
-    def __init__(self, tile_side, x, y, *groups):
-        self.x = x
-        self.y = y
-        super().__init__(*groups)
-        self.image = pygame.transform.scale(ldr.load_tile('ramka_red.png'), (tile_side, tile_side))
-        self.rect = self.image.get_rect().move(x, y)
-
-    def get_cor(self):
-        return tuple([self.x, self.y])
+    def tile_coords(self):
+        return tuple([self.rect.x, self.rect.y])
 
 
 class BattleField:
-    def __init__(self, map_file, cell_size, left_top, scr):
+    def __init__(self, cell_size, left_top, scr, tile_arr):
         self.data = [[None] * 10 for _ in range(10)]
-        self.data2 = [[None] * 10 for _ in range(10)]
         self.height = self.width = 10 * cell_size
         self.cell_size = cell_size
         self.left, self.top = left_top
@@ -273,14 +271,14 @@ class BattleField:
         self.atak = SpriteGroup()
         self.own_surface = scr
         self.units_data = {}
-
-        with open('data/maps/' + map_file + '.btlm') as file:
-            self.tile_arr = list(map(lambda x: list(x.strip()), file.readlines()))
-        self.atakdat = self.tile_arr[:]
-
-        for line in range(len(self.tile_arr)):
-            for column in range(len(self.tile_arr)):
-                self.data[line][column] = Tile(self.tile_arr[line][column], cell_size,
+        self.move = False
+        self.attack = False
+        self.hed1 = 0
+        self.turn = True
+        self.exit = 0
+        for line in range(len(tile_arr)):
+            for column in range(len(tile_arr)):
+                self.data[line][column] = Tile(tile_arr[line][column], cell_size,
                                                self.left + self.cell_size * column,
                                                self.top + self.cell_size * line,
                                                self.tiles_group, self.all_sprites)
@@ -288,6 +286,11 @@ class BattleField:
     def render(self):
         self.all_sprites.draw(self.own_surface)
         self.atak.draw(self.own_surface)
+        
+    def normalize(self):
+        for i in self.data:
+            for j in i:
+                j.normal()
 
     def tap_converter(self, tap_pos):
         find_x = (tap_pos[0] - self.left) // self.cell_size
@@ -298,94 +301,184 @@ class BattleField:
             return tuple([find_x, find_y])
 
     def add_unit(self, unit_type, cell_x, cell_y, enemy=False):
-        pos_x = cell_x * self.cell_size + self.left
-        pos_y = cell_y * self.cell_size + self.top
-        if unit_type == 'Artillery':
-            unit = [Artillery(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 8, 8]
-        elif unit_type == 'Cannon':
-            unit = [Cannon(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 12, 12]
-        elif unit_type == 'TankLarge':
-            unit = [TankLarge(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 10, 10]
-        elif unit_type == 'TankMedium':
-            unit = [TankMedium(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 9, 9]
+        if self.data[cell_y][cell_x].kind != 'Mountain':
+            pos_x = cell_x * self.cell_size + self.left
+            pos_y = cell_y * self.cell_size + self.top
+            if unit_type == 'Artillery':
+                unit = [Artillery(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 8, 8]
+            elif unit_type == 'Cannon':
+                unit = [Cannon(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 12, 12]
+            elif unit_type == 'TankLarge':
+                unit = [TankLarge(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 10, 10]
+            elif unit_type == 'TankMedium':
+                unit = [TankMedium(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 9, 9]
+            else:
+                unit = [TankSmall(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 8, 8]
+            self.units_data[tuple([cell_x, cell_y])] = unit
+
+    def tap_dispatcher(self, mouse_pos, type_of_press):
+        a = self.tap_converter(mouse_pos)
+        b = a and (a in list(self.units_data.keys())) and not self.units_data[a][0].is_enemy
+        if type_of_press == 1 and not self.move and self.turn:
+            if self.attack:
+                self.attacking(self.hed1, mouse_pos)
+                self.attack = False
+            elif b:
+                self.targeting(mouse_pos)
+                self.attack = True
+                self.hed1 = mouse_pos
+        if type_of_press == 3 and not self.attack and self.turn:
+            if self.move:
+                self.moving(self.hed1, mouse_pos)
+                self.move = False
+            elif b:
+                self.move = True
+                self.hed1 = mouse_pos
+                self.mapping(mouse_pos)
         else:
-            unit = [TankSmall(pos_x, pos_y, enemy, self.units_group, self.all_sprites), 8, 8]
-        self.units_data[tuple([cell_x, cell_y])] = unit
+            self.move = False
 
-    def tap_dispatcher(self, mouse_pos, type):
-        for i in self.atak:
-            i.kill()
-
-    def mox(self, mouse_pos):
+    def mapping(self, mouse_pos):
         cell = self.tap_converter(mouse_pos)
         if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
-            dal = self.units_data[cell][0].dal
-            self.units_data[cell][1] = 0
-            for column in range(cell[0] - dal, cell[0] + dal + 1):
-                for line in range(cell[1] - dal, cell[1] + dal + 1):
+            speed = self.units_data[cell][0].speed
+            for column in range(cell[0] - speed, cell[0] + speed + 1):
+                for line in range(cell[1] - speed, cell[1] + speed + 1):
                     h = tuple([column, line])
                     if line < 0 or column < 0 or line > 9 or column > 9 or h == cell:
                         pass
                     else:
                         if h not in list(self.units_data.keys()):
-                            self.data2[line][column] = Tile2(self.cell_size,
-                                                             self.left + self.cell_size * column,
-                                                             self.top + self.cell_size * line,
-                                                             self.tiles_group, self.atak)
+                            self.data[line][column].move()
 
     def moving(self, pos1, pos2):
-        for i in self.atak:
-            i.kill()
+        self.normalize()
         cell1 = self.tap_converter(pos1)
         cell2 = self.tap_converter(pos2)
         if cell1 and cell2:
-            dal = self.units_data[cell1][0].dal
-        pos_x = cell2[0] * self.cell_size + self.left
-        pos_y = cell2[1] * self.cell_size + self.top
-        if cell1 and cell2 and (not cell2 in self.units_data.keys()) and (
-                cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2])\
-                and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= dal:
-            self.units_data[cell1][0].move(pos_x, pos_y)
-            self.units_data[cell2] = self.units_data[cell1]
-            del self.units_data[cell1]
+            speed = self.units_data[cell1][0].speed
+            pos_x = cell2[0] * self.cell_size + self.left
+            pos_y = cell2[1] * self.cell_size + self.top
+            if(cell2 not in list(self.units_data.keys())) and (
+                    cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2])\
+                    and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= speed and \
+                    self.data[cell2[1]][cell2[0]].kind != 'Mountain':
+                self.units_data[cell1][0].move(pos_x, pos_y)
+                self.units_data[cell2] = self.units_data[cell1]
+                del self.units_data[cell1]
+                self.turn = False
+                self.update()
+                pygame.display.flip()
+                self.ii_turn()
 
-    def pricel(self, mouse_pos):
+    def targeting(self, mouse_pos):
+        self.normalize()
         cell = self.tap_converter(mouse_pos)
         if cell and (cell in list(self.units_data.keys()) and self.units_data[cell][1] == self.units_data[cell][2]):
-            dal = self.units_data[cell][0].dal
-            for column in range(cell[0] - dal, cell[0] + dal + 1):
-                for line in range(cell[1] - dal, cell[1] + dal + 1):
+            speed = self.units_data[cell][0].attack_range
+            for column in range(cell[0] - speed, cell[0] + speed + 1):
+                for line in range(cell[1] - speed, cell[1] + speed + 1):
                     h = tuple([column, line])
                     if line < 0 or column < 0 or line > 9 or column > 9 or h == cell:
                         pass
                     else:
-                        if h in list(self.units_data.keys()) and self.units_data[h][0].get_enemi() != \
-                                self.units_data[cell][0].get_enemi():
-                            self.data2[line][column] = Tile2(self.cell_size,
-                                                             self.left + self.cell_size * column,
-                                                             self.top + self.cell_size * line,
-                                                             self.tiles_group, self.atak)
-    def atacing(self, pos1, pos2):
-        for i in self.atak:
-            i.kill()
+                        if h in list(self.units_data.keys()) and self.units_data[h][0].is_enemy != \
+                                self.units_data[cell][0].is_enemy:
+                            self.data[line][column].target()
+
+    def attacking(self, pos1, pos2):
+        self.normalize()
         cell1 = self.tap_converter(pos1)
         cell2 = self.tap_converter(pos2)
         if cell1 and cell2 and cell1 != cell2:
-            dal = self.units_data[cell1][0].dal
-        print(max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])))
+            speed = self.units_data[cell1][0].attack_range
         if cell1 != cell2 and cell1 and cell2 and (cell2 in self.units_data.keys()) and \
                 cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2] \
-                and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= dal and self.units_data[cell1][0].get_enemi() != \
-                                self.units_data[cell2][0].get_enemi():
+                and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= speed and \
+                self.units_data[cell1][0].is_enemy != \
+                self.units_data[cell2][0].is_enemy:
             self.units_data[cell1][1] = 0
-            self.units_data[cell2][0].health = 0
+            self.units_data[cell2][0].health -= self.units_data[cell1][0].attack
+            self.turn = False
+            self.update()
+            pygame.display.flip()
+            self.ii_turn()
+
+    def ii_turn(self):
+        print()
+        enemies = []
+        allies = []
+        for key in list(self.units_data.keys()):
+            if self.units_data[key][0].is_enemy:
+                enemies.append(key)
+            else:
+                allies.append(key)
+        flag = True
+        for enemy in enemies:
+            for ally in allies:
+                print(ally, enemy, max(abs(ally[0] - enemy[0]), abs(ally[1] - enemy[1])) <= self.units_data[enemy][0].attack_range)
+                if max(abs(ally[0] - enemy[0]), abs(ally[1] - enemy[1])) <= self.units_data[enemy][0].attack_range:
+                    self.ii_attack(enemy, ally)
+                    flag = False
+                    break
+        if flag:
+            self.ii_move(random.choice(enemies))
+        self.turn = True
+
+    def ii_attack(self, enemy, ally):
+        self.data[enemy[0]][ally[0]].target()
+        self.data[enemy[1]][ally[1]].target()
+        self.normalize()
+        self.units_data[ally][0].health -= self.units_data[enemy][0].attack
+
+    def ii_move(self, enemy):
+        variants = []
+        speed = self.units_data[enemy][0].speed
+        for column in range(enemy[0] - speed, enemy[0] + speed + 1):
+            for line in range(enemy[1] - speed, enemy[1] + speed + 1):
+                h = tuple([column, line])
+                if line < 0 or column < 0 or line > 9 or column > 9 or h == enemy:
+                    pass
+                else:
+                    if h not in list(self.units_data.keys()) and self.data[column][line].kind != 'Mountain':
+                        self.data[line][column].move()
+                        variants.append((line, column))
+        self.normalize()
+        pos = random.choice(variants)
+        pos_x = pos[0] * self.cell_size + self.left
+        pos_y = pos[1] * self.cell_size + self.top
+        self.units_data[enemy][0].move(pos_x, pos_y)
+        self.units_data[pos] = self.units_data[enemy]
+        del self.units_data[enemy]
 
     def update(self):
+        enemies = 0
+        if not self.move and not self.attack:
+            self.normalize()
         for key in list(self.units_data.keys()):
+            if self.units_data[key][0].is_enemy:
+                enemies += 1
             if self.units_data[key][0].health <= 0:
                 self.units_data[key][0].die(self.particles_group, self.all_sprites)
                 del self.units_data[key]
             elif self.units_data[key][1] < self.units_data[key][2]:
                 self.units_data[key][1] += 1
                 self.units_data[key][0].update()
+        if enemies == 0:
+            self.exit += 1
+        if self.exit == 35:
+            pygame.quit()
         self.particles_group.update()
+
+
+def load_game(map_name, surface):
+    map_file = open('data/maps/' + map_name + '.btlm')
+    map_info = list(map(lambda x: x.strip(), map_file.readlines()))
+    map_file.close()
+    tiles = map_info[:10]
+    units = map_info[11:]
+    field = BattleField(90, (50, 50), surface, tiles)
+    for unit in units:
+        unit = unit.split()
+        field.add_unit(str(unit[0]), int(unit[1]), int(unit[2]), bool(int(unit[3])))
+    return field
