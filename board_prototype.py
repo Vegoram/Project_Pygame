@@ -22,6 +22,8 @@ while running:
         screen.fill((0, 0, 0))
     except pygame.error:
         print('Победа!')
+        print(field.scor())
+
         terminate()
     field.render()
     clock.tick(FPS)
