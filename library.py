@@ -276,6 +276,7 @@ class BattleField:
         self.hed1 = 0
         self.turn = True
         self.exit = 0
+        self.hod = 0
         for line in range(len(tile_arr)):
             for column in range(len(tile_arr)):
                 self.data[line][column] = Tile(tile_arr[line][column], cell_size,
@@ -370,6 +371,7 @@ class BattleField:
                 self.update()
                 pygame.display.flip()
                 self.ii_turn()
+                self.hod += 1
 
     def targeting(self, mouse_pos):
         self.normalize()
@@ -403,6 +405,7 @@ class BattleField:
             self.update()
             pygame.display.flip()
             self.ii_turn()
+            self.hod += 1
 
     def ii_turn(self):
         print()
@@ -421,7 +424,7 @@ class BattleField:
                     self.ii_attack(enemy, ally)
                     flag = False
                     break
-        if flag:
+        if flag and enemies:
             self.ii_move(random.choice(enemies))
         self.turn = True
 
@@ -469,6 +472,15 @@ class BattleField:
         if self.exit == 35:
             pygame.quit()
         self.particles_group.update()
+    def scor(self):
+        d = 10000
+        for i in range(10):
+            for u in range(10):
+                if tuple([i, u]) in self.units_data.keys():
+                    if not self.units_data[tuple([i, u])][0].is_enemy:
+                        d += 2000
+        return d - self.hod * 100
+
 
 
 def load_game(map_name, surface):
