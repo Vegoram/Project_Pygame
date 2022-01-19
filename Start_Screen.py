@@ -1,4 +1,3 @@
-
 import pygame
 import os
 import sys
@@ -30,7 +29,7 @@ def load_image(name, color_key=None):
         image = image.convert_alpha()
     return image
 
-class startscreen:
+class startscreen():
     def start(self):
         def start_screen():
             intro_text = ["ЗАСТАВКА", "", ]
@@ -233,9 +232,7 @@ class startscreen:
             if not start_screen():
                 k = level_screen()
                 if k:
-                    print(k)
+                    return k
                     break
             else:
                 f = rulscrin()
-d = startscreen()
-d.start()
