@@ -1,6 +1,10 @@
 from library import *
+from levol import *
+from final import *
 
 
+d = startscreen()
+t = d.start()
 pygame.init()
 screen_size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode(screen_size)
@@ -8,7 +12,7 @@ FPS = 40
 clock = pygame.time.Clock()
 pygame.display.set_caption('Стрельботня')
 all_sprites = pygame.sprite.Group()
-field = load_game('test_map', screen)
+field = load_game(f"map{t}", screen)
 pygame.display.flip()
 running = True
 while running:
@@ -21,9 +25,8 @@ while running:
     try:
         screen.fill((0, 0, 0))
     except pygame.error:
-        print('Победа!')
-        print(field.scor())
-
+        f = finalscreen()
+        f.win(field.scor())
         terminate()
     field.render()
     clock.tick(FPS)
