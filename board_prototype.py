@@ -3,6 +3,7 @@ from levol import *
 from final import *
 
 
+
 d = startscreen()
 t = d.start()
 pygame.init()
@@ -16,6 +17,10 @@ field = load_game(f"map{t}", screen)
 pygame.display.flip()
 running = True
 while running:
+    if field.provvin():
+        f = finalscreen()
+        f.fail()
+        terminate()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -32,4 +37,3 @@ while running:
     clock.tick(FPS)
     pygame.display.flip()
 terminate()
-
