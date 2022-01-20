@@ -11,7 +11,8 @@ WIDTH = HEIGHT = 1000
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 pygame.init()
 screen_size = (WIDTH, HEIGHT)
-screen = pygame.display.set_mode(screen_size)
+screen1 = pygame.display.set_mode(screen_size)
+h = 0
 
 
 def terminate():
@@ -69,6 +70,7 @@ for imag in [ldr.load_particle('piece_1.png'), ldr.load_particle('piece_2.png'),
     for scal in (32, 35, 37):
         parts.append(pygame.transform.scale(imag, (scal, scal)))
 PARTICLES = parts.copy()
+
 
 
 class SpriteGroup(pygame.sprite.Group):
@@ -277,12 +279,26 @@ class BattleField:
         self.turn = True
         self.exit = 0
         self.hod = 0
+        self.ii = 0
         for line in range(len(tile_arr)):
             for column in range(len(tile_arr)):
                 self.data[line][column] = Tile(tile_arr[line][column], cell_size,
                                                self.left + self.cell_size * column,
                                                self.top + self.cell_size * line,
                                                self.tiles_group, self.all_sprites)
+    def provvin(self):
+        h = True
+        for i in range(10):
+            for u in range(10):
+                if tuple([i, u]) in self.units_data.keys():
+                    if not self.units_data[tuple([i, u])][0].is_enemy:
+                        h = False
+        if h:
+            self.exit += 1
+        if self.exit == 35:
+            return True
+
+
 
     def render(self):
         self.all_sprites.draw(self.own_surface)
@@ -407,6 +423,7 @@ class BattleField:
             self.ii_turn()
             self.hod += 1
 
+
     def ii_turn(self):
         print()
         enemies = []
@@ -429,6 +446,7 @@ class BattleField:
         self.turn = True
 
     def ii_attack(self, enemy, ally):
+
         self.data[enemy[0]][ally[0]].target()
         self.data[enemy[1]][ally[1]].target()
         self.normalize()
@@ -472,6 +490,7 @@ class BattleField:
         if self.exit == 35:
             pygame.quit()
         self.particles_group.update()
+
     def scor(self):
         d = 10000
         for i in range(10):
