@@ -1,0 +1,19 @@
+##########
+#........#
+#.######.#
+#.#....#.#
+#.#.##.#.#
+#.#.##.#.#
+#.#....#.#
+#.######.#
+#........#
+##########
+
+TankLarge 1 1 1
+TankLarge 8 1 1
+TankLarge 4 3 1
+TankLarge 5 3 1
+TankLarge 1 8 0
+TankLarge 8 8 0
+TankLarge 4 6 0
+TankLarge 5 6 0
