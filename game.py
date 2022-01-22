@@ -822,31 +822,34 @@ def load_game(map_name, surface):  # Загрузка игры из файла
     return field
 
 
-d = StartScreen()
-mappy = d.start()
-# Расширение экрана для игры
-WIDTH, HEIGHT = 1000, 1000
-SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
-screen_size = (WIDTH, HEIGHT)
-screen = pygame.display.set_mode(screen_size)
-clock = pygame.time.Clock()
-pygame.display.set_caption('Война')
-all_sprites = pygame.sprite.Group()
-field = load_game('map_' + str(mappy), screen)
-pygame.display.flip()
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            field.tap_dispatcher(event.pos, event.button)
-    field.update()
-    try:
-        screen.fill((0, 0, 0))
-    except pygame.error:
-        terminate()
-    field.render()
-    clock.tick(FPS)
+try:
+    d = StartScreen()
+    mappy = d.start()
+    # Расширение экрана для игры
+    WIDTH, HEIGHT = 1000, 1000
+    SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
+    screen_size = (WIDTH, HEIGHT)
+    screen = pygame.display.set_mode(screen_size)
+    clock = pygame.time.Clock()
+    pygame.display.set_caption('Война')
+    all_sprites = pygame.sprite.Group()
+    field = load_game('map_' + str(mappy), screen)
     pygame.display.flip()
-terminate()
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                field.tap_dispatcher(event.pos, event.button)
+        field.update()
+        try:
+            screen.fill((0, 0, 0))
+        except pygame.error:
+            terminate()
+        field.render()
+        clock.tick(FPS)
+        pygame.display.flip()
+    terminate()
+except Exception:
+    terminate()
