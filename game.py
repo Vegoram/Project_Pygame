@@ -421,7 +421,7 @@ def create_particles(position, particle_count, *groups):  # Метод, вызы
         Particle(1, position, random.choice(speeds_x), random.choice(speeds_y), *groups)
 
 
-# Следующие 5 классов - наследники класса Unit, представляющие собой
+# Следующие 5 классов - наследники класса Unit, представляющие собой боевую технику
 class Artillery(Unit):
     def __init__(self, x, y, is_enemy=False, *groups):
         if is_enemy:
