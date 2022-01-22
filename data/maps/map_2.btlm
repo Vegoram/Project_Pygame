@@ -1,0 +1,21 @@
+.....#####
+.........#
+.#.......#
+.....#####
+..........
+.#......#.
+#####.....
+#.........
+#.......#.
+#####.....
+
+TankMedium 1 7 0
+TankMedium 1 8 0
+TankLarge 2 7 0
+TankLarge 2 8 0
+Artillery 9 9 0
+TankMedium 8 1 1
+TankMedium 8 2 1
+TankLarge 7 1 1
+TankLarge 7 2 1
+TankSmall 0 0 1

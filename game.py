@@ -1,23 +1,310 @@
-import random
-import time
-
-import pygame
 import os
+import random
 import sys
+import time
+import pygame
+
 
 SPRITE_SIDE = 90
-TILE_IMAGES = {'.': 'empty.png', '#': 'mountain.png', 'f': 'empty2.png'}
-WIDTH = HEIGHT = 1000
+TILE_IMAGES = {'.': 'empty.png', '#': 'mountain.png'}
+WIDTH = 700
+HEIGHT = 500
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
+FPS = 40
 pygame.init()
+artillery_sound = pygame.mixer.Sound('data/sounds/Artillery.wav')
+cannon_sound = pygame.mixer.Sound('data/sounds/Cannon.wav')
+tank_large_sound = pygame.mixer.Sound('data/sounds/TankLarge.wav')
+tank_medium_sound = pygame.mixer.Sound('data/sounds/TankMedium.wav')
+tank_small_sound = pygame.mixer.Sound('data/sounds/TankSmall.wav')
 screen_size = (WIDTH, HEIGHT)
-screen1 = pygame.display.set_mode(screen_size)
-h = 0
+screen = pygame.display.set_mode(screen_size)
+all_sprites = pygame.sprite.Group()
+
+
+class finalscreen():
+    def __init__(self):
+        size1 = self.width1, self.height1 = 500, 300
+        self.screen1 = pygame.display.set_mode(size1)
+        self.FPS = 50
+        pygame.init()
+        pygame.key.set_repeat(200, 70)
+    def win(self, scor):
+        font = pygame.font.Font(None, 30)
+        fon = pygame.transform.scale(load_image('images/fail.jpg'), (self.width1, self.height1))
+        self.screen1.blit(fon, (0, 0))
+        clock = pygame.time.Clock()
+        string_rendered3 = font.render('ПОБЕДА', 32, pygame.Color('white'))
+        intro_rect3 = string_rendered3.get_rect()
+        intro_rect3.top = 140
+        intro_rect3.x = 200
+        self.screen1.blit(string_rendered3, intro_rect3)
+        string_rendered3 = font.render(f"Ваш счет {str(scor)}", 32, pygame.Color('white'))
+        intro_rect3 = string_rendered3.get_rect()
+        intro_rect3.top = 170
+        intro_rect3.x = 170
+        self.screen1.blit(string_rendered3, intro_rect3)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    terminate()
+                pygame.display.flip()
+                clock.tick(self.FPS)
+    def fail(self):
+        font = pygame.font.Font(None, 30)
+        fon = pygame.transform.scale(load_image('images/fail.jpg'), (self.width1, self.height1))
+        self.screen1.blit(fon, (0, 0))
+        clock = pygame.time.Clock()
+        string_rendered3 = font.render('ПОРАЖЕНИЕ', 32, pygame.Color('white'))
+        intro_rect3 = string_rendered3.get_rect()
+        intro_rect3.top = 120
+        intro_rect3.x = 180
+        self.screen1.blit(string_rendered3, intro_rect3)
+        string_rendered3 = font.render('Не расстраивайтесь. Попробуйте еще раз', 32, pygame.Color('white'))
+        intro_rect3 = string_rendered3.get_rect()
+        intro_rect3.top = 150
+        intro_rect3.x = 40
+        self.screen1.blit(string_rendered3, intro_rect3)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    terminate()
+                pygame.display.flip()
+                clock.tick(self.FPS)
 
 
 def terminate():
     pygame.quit()
     sys.exit()
+
+def load_image(name, color_key=None):
+    fullname = os.path.join('data', name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    if color_key is not None:
+        image = image.convert()
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    else:
+        image = image.convert_alpha()
+    return image
+
+class StartScreen():
+    pygame.display.set_caption('Война')
+    def start(self):
+        def start_screen():
+            intro_text = ["В ПРОРЫВ!", "", ]
+
+            fon = pygame.transform.scale(load_image('images/fon2.jpeg'), (WIDTH, HEIGHT))
+            screen.blit(fon, (0, 0))
+            font = pygame.font.Font(None, 30)
+            text_coord = 50
+            for line in intro_text:
+                string_rendered = font.render(line, 1, pygame.Color('black'))
+                intro_rect = string_rendered.get_rect()
+                text_coord += 10
+                intro_rect.top = text_coord
+                intro_rect.x = 10
+                text_coord += intro_rect.height
+                screen.blit(string_rendered, intro_rect)
+
+            sprite = pygame.sprite.Sprite()
+            image = load_image('images/Apps launcher.png')
+            sprite.image = pygame.transform.scale(image, (100, 40))
+            sprite.rect = sprite.image.get_rect()
+            all_sprites.add(sprite)
+            sprite.rect.x = 80
+            sprite.rect.y = 380
+            sprite2 = pygame.sprite.Sprite()
+            image1 = load_image('images/Apps launcher.png')
+            sprite2.image = pygame.transform.scale(image1, (100, 40))
+            sprite2.rect = sprite.image.get_rect()
+            all_sprites.add(sprite2)
+            sprite2.rect.x = 540
+            sprite2.rect.y = 380
+
+            clock = pygame.time.Clock()
+
+            def provercapav(f):
+                if 80 <= f[0] and 180 >= f[0] and 380 <= f[1] and 420 >= f[1]:
+                    return True
+
+            def provercapav2(f):
+                if 540 <= f[0] and 640 >= f[0] and 380 <= f[1] and 420 >= f[1]:
+                    return True
+
+            while True:
+                all_sprites.draw(screen)
+                all_sprites.update()
+                string_rendered2 = font.render('Играть', 1, pygame.Color('black'))
+                intro_rect2 = string_rendered2.get_rect()
+                intro_rect2.top = 390
+                intro_rect2.x = 560
+                screen.blit(string_rendered2, intro_rect2)
+                string_rendered3 = font.render('Правила', 1, pygame.Color('black'))
+                intro_rect3 = string_rendered2.get_rect()
+                intro_rect3.top = 390
+                intro_rect3.x = 90
+                screen.blit(string_rendered3, intro_rect3)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        for i in all_sprites:
+                            i.kill()
+                        if provercapav(event.pos):
+                            return True
+                        if provercapav2(event.pos):
+                            return False
+
+                pygame.display.flip()
+                clock.tick(FPS)
+        def level_screen():
+            fon = pygame.transform.scale(load_image('images/fon3.png'), (WIDTH, HEIGHT))
+            screen.blit(fon, (0, 0))
+            font = pygame.font.Font(None, 30)
+            clock = pygame.time.Clock()
+            image = load_image('images/Apps launcher.png')
+            sprite = pygame.sprite.Sprite()
+            sprite.image = pygame.transform.scale(image, (80, 40))
+            sprite.rect = sprite.image.get_rect()
+            all_sprites.add(sprite)
+            sprite.rect.x = 540
+            sprite.rect.y = 380
+            f = 0
+            for i in range(3):
+                sprite = pygame.sprite.Sprite()
+                sprite.image = pygame.transform.scale(image, (160, 80))
+                sprite.rect = sprite.image.get_rect()
+                all_sprites.add(sprite)
+                sprite.rect.x = 50 + f
+                sprite.rect.y = 85
+                f += 215
+            f2 = 0
+            for i in range(3):
+                sprite = pygame.sprite.Sprite()
+                sprite.image = pygame.transform.scale(image, (160, 80))
+                sprite.rect = sprite.image.get_rect()
+                all_sprites.add(sprite)
+                sprite.rect.x = 50 + f2
+                sprite.rect.y = 215
+                f2 += 215
+
+            string_rendered3 = font.render('Назад', 1, pygame.Color('black'))
+            intro_rect3 = string_rendered3.get_rect()
+            intro_rect3.top = 390
+            intro_rect3.x = 550
+            intro_text = ['1 уровень                   2 уровень                    3 уровень',
+                          '4 уровень                   5 уровень                    6 уровень']
+            def provercapav(f):
+                if 540 <= f[0] and 620 >= f[0] and 380 <= f[1] and 420 >= f[1]:
+                    return True
+
+            def provercalevel(f):
+                for i in range(3):
+                    if 50 + i * 215 <= f[0] and 210 + i * 215 >= f[0] and 85 <= f[1] and 165 >= f[1]:
+                        return i + 1
+                for i in range(3):
+                    if 50 + i * 215 <= f[0] and 210 + i * 215 >= f[0] and 85  + 130 <= f[1] and 165 + 130 >= f[1]:
+                        return i + 4
+
+            while True:
+                all_sprites.draw(screen)
+                all_sprites.update()
+                screen.blit(string_rendered3, intro_rect3)
+                text_coord = 0
+                for line in intro_text:
+                    string_rendered = font.render(line, 1, pygame.Color('black'))
+                    intro_rect = string_rendered.get_rect()
+                    text_coord += 110
+                    intro_rect.top = text_coord
+                    intro_rect.x = 80
+                    text_coord += intro_rect.height
+                    screen.blit(string_rendered, intro_rect)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        for i in all_sprites:
+                            i.kill()
+                        if provercapav(event.pos):
+                            return False
+                        g = provercalevel(event.pos)
+                        if g:
+                            return g
+
+                pygame.display.flip()
+                clock.tick(FPS)
+
+        def rulscrin():
+            intro_text = ["ПРАВИЛА",
+                          "",
+                          'Это тактическая игра.',
+                          'Главная цель - уничтожить все юниты врага.',
+                          'Дополнительные очки можно получить, завершив бой',
+                          'за наименьшее кол-во ходов и сохранив',
+                          'как можно больше здоровья у юнитов.']
+            fon = pygame.transform.scale(load_image('images/fon3.png'), (WIDTH, HEIGHT))
+            screen.blit(fon, (0, 0))
+            font = pygame.font.Font(None, 30)
+            text_coord = 50
+            for line in intro_text:
+                string_rendered = font.render(line, 1, pygame.Color('white'))
+                intro_rect = string_rendered.get_rect()
+                text_coord += 10
+                intro_rect.top = text_coord
+                intro_rect.x = 10
+                text_coord += intro_rect.height
+                screen.blit(string_rendered, intro_rect)
+            sprite = pygame.sprite.Sprite()
+            image = load_image('images/Apps launcher.png')
+            sprite.image = pygame.transform.scale(image, (80, 40))
+            sprite.rect = sprite.image.get_rect()
+            all_sprites.add(sprite)
+            sprite.rect.x = 540
+            sprite.rect.y = 380
+            string_rendered3 = font.render('Назад', 1, pygame.Color('black'))
+            intro_rect3 = string_rendered3.get_rect()
+            intro_rect3.top = 390
+            intro_rect3.x = 550
+
+            def provercapav(f):
+                if 540 <= f[0] and 620 >= f[0] and 380 <= f[1] and 420 >= f[1]:
+                    return True
+
+
+            clock = pygame.time.Clock()
+            while True:
+                all_sprites.draw(screen)
+                all_sprites.update()
+                screen.blit(string_rendered3, intro_rect3)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        terminate()
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        for i in all_sprites:
+                            i.kill()
+                        if provercapav(event.pos):
+                            return True
+                pygame.display.flip()
+                clock.tick(FPS)
+        while True:
+            if not start_screen():
+                k = level_screen()
+                if k:
+                    return k
+                    break
+            else:
+                f = rulscrin()
 
 
 def load_image(name, color_key=None):
@@ -70,15 +357,6 @@ for imag in [ldr.load_particle('piece_1.png'), ldr.load_particle('piece_2.png'),
     for scal in (32, 35, 37):
         parts.append(pygame.transform.scale(imag, (scal, scal)))
 PARTICLES = parts.copy()
-
-
-
-class SpriteGroup(pygame.sprite.Group):
-    def __init__(self):
-        super().__init__()
-
-    def render(self):
-        pass
 
 
 class Unit(pygame.sprite.Sprite):
@@ -159,10 +437,10 @@ class Artillery(Unit):
         self.is_enemy = is_enemy
 
     def set_stats(self):
-        self.health = 1
-        self.attack = 1
+        self.health = 2
+        self.attack = 2
         self.attack_range = 3
-        self.speed = 3
+        self.speed = 2
 
 
 class Cannon(Unit):
@@ -177,7 +455,7 @@ class Cannon(Unit):
     def set_stats(self):
         self.health = 1
         self.attack = 1
-        self.attack_range = 5
+        self.attack_range = 4
         self.speed = 1
 
 
@@ -191,8 +469,8 @@ class TankLarge(Unit):
         self.is_enemy = is_enemy
 
     def set_stats(self):
-        self.health = 1
-        self.attack = 1
+        self.health = 5
+        self.attack = 2
         self.attack_range = 3
         self.speed = 2
 
@@ -207,8 +485,8 @@ class TankMedium(Unit):
         self.is_enemy = is_enemy
 
     def set_stats(self):
-        self.health = 1
-        self.attack = 1
+        self.health = 4
+        self.attack = 2
         self.attack_range = 3
         self.speed = 3
 
@@ -223,9 +501,9 @@ class TankSmall(Unit):
         self.is_enemy = is_enemy
 
     def set_stats(self):
-        self.health = 1
+        self.health = 3
         self.attack = 1
-        self.attack_range = 1
+        self.attack_range = 2
         self.speed = 4
 
 
@@ -243,15 +521,19 @@ class Tile(pygame.sprite.Sprite):
 
     def __str__(self):
         return self.kind
-        
+
     def normal(self):
         if self.kind != 'Mountain':
             self.image = pygame.transform.scale(ldr.load_tile('empty.png'), (self.tile_side, self.tile_side))
-        
+
+    def destroy(self):
+        if self.kind != 'Mountain':
+            self.image = pygame.transform.scale(ldr.load_tile('empty_destroyer.png'), (self.tile_side, self.tile_side))
+
     def target(self):
         if self.kind != 'Mountain':
             self.image = pygame.transform.scale(ldr.load_tile('empty_target.png'), (self.tile_side, self.tile_side))
-        
+
     def move(self):
         if self.kind != 'Mountain':
             self.image = pygame.transform.scale(ldr.load_tile('empty_move.png'), (self.tile_side, self.tile_side))
@@ -266,44 +548,30 @@ class BattleField:
         self.height = self.width = 10 * cell_size
         self.cell_size = cell_size
         self.left, self.top = left_top
-        self.tiles_group = SpriteGroup()
-        self.units_group = SpriteGroup()
-        self.particles_group = SpriteGroup()
-        self.all_sprites = SpriteGroup()
-        self.atak = SpriteGroup()
+        self.tiles_group = pygame.sprite.Group()
+        self.units_group = pygame.sprite.Group()
+        self.particles_group = pygame.sprite.Group()
+        self.all_sprites = pygame.sprite.Group()
+        self.atak = pygame.sprite.Group()
         self.own_surface = scr
         self.units_data = {}
         self.move = False
         self.attack = False
         self.hed1 = 0
+        self.counter = 0
         self.turn = True
         self.exit = 0
-        self.hod = 0
-        self.ii = 0
         for line in range(len(tile_arr)):
             for column in range(len(tile_arr)):
                 self.data[line][column] = Tile(tile_arr[line][column], cell_size,
                                                self.left + self.cell_size * column,
                                                self.top + self.cell_size * line,
                                                self.tiles_group, self.all_sprites)
-    def provvin(self):
-        h = True
-        for i in range(10):
-            for u in range(10):
-                if tuple([i, u]) in self.units_data.keys():
-                    if not self.units_data[tuple([i, u])][0].is_enemy:
-                        h = False
-        if h:
-            self.exit += 1
-        if self.exit == 35:
-            return True
-
-
 
     def render(self):
         self.all_sprites.draw(self.own_surface)
         self.atak.draw(self.own_surface)
-        
+
     def normalize(self):
         for i in self.data:
             for j in i:
@@ -376,18 +644,16 @@ class BattleField:
             speed = self.units_data[cell1][0].speed
             pos_x = cell2[0] * self.cell_size + self.left
             pos_y = cell2[1] * self.cell_size + self.top
-            if(cell2 not in list(self.units_data.keys())) and (
-                    cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2])\
+            if (cell2 not in list(self.units_data.keys())) and (
+                    cell1 in list(self.units_data.keys()) and self.units_data[cell1][1] == self.units_data[cell1][2]) \
                     and max(abs(cell2[1] - cell1[1]), abs(cell2[0] - cell1[0])) <= speed and \
                     self.data[cell2[1]][cell2[0]].kind != 'Mountain':
                 self.units_data[cell1][0].move(pos_x, pos_y)
                 self.units_data[cell2] = self.units_data[cell1]
                 del self.units_data[cell1]
                 self.turn = False
-                self.update()
-                pygame.display.flip()
+                self.counter += 1
                 self.ii_turn()
-                self.hod += 1
 
     def targeting(self, mouse_pos):
         self.normalize()
@@ -403,6 +669,7 @@ class BattleField:
                         if h in list(self.units_data.keys()) and self.units_data[h][0].is_enemy != \
                                 self.units_data[cell][0].is_enemy:
                             self.data[line][column].target()
+        self.data[cell[1]][cell[0]].destroy()
 
     def attacking(self, pos1, pos2):
         self.normalize()
@@ -417,15 +684,27 @@ class BattleField:
                 self.units_data[cell2][0].is_enemy:
             self.units_data[cell1][1] = 0
             self.units_data[cell2][0].health -= self.units_data[cell1][0].attack
+            self.play_sound(self.units_data[cell1][0])
             self.turn = False
-            self.update()
-            pygame.display.flip()
+            self.counter += 1
             self.ii_turn()
-            self.hod += 1
 
+    def play_sound(self, unit):
+        if isinstance(unit, Cannon):
+            cannon_sound.play()
+        elif isinstance(unit, Artillery):
+            artillery_sound.play()
+        elif isinstance(unit, TankLarge):
+            tank_large_sound.play()
+        elif isinstance(unit, TankMedium):
+            tank_medium_sound.play()
+        elif isinstance(unit, TankSmall):
+            tank_small_sound.play()
 
     def ii_turn(self):
-        print()
+        self.update()
+        if self.exit != 0:
+            return
         enemies = []
         allies = []
         for key in list(self.units_data.keys()):
@@ -436,20 +715,37 @@ class BattleField:
         flag = True
         for enemy in enemies:
             for ally in allies:
-                print(ally, enemy, max(abs(ally[0] - enemy[0]), abs(ally[1] - enemy[1])) <= self.units_data[enemy][0].attack_range)
                 if max(abs(ally[0] - enemy[0]), abs(ally[1] - enemy[1])) <= self.units_data[enemy][0].attack_range:
                     self.ii_attack(enemy, ally)
                     flag = False
                     break
-        if flag and enemies:
-            self.ii_move(random.choice(enemies))
+            if not flag:
+                break
+        if flag:
+            try:
+                self.ii_move(random.choice(enemies))
+            except IndexError:
+                for _ in range(30):
+                    self.update()
+                    self.render()
+                    pygame.display.flip()
+                    time.sleep(0.02)
+                score = 10000 - self.counter * 50 + len(list(self.units_data.keys())) * 1000
+                finalscreen().win(score)
+                terminate()
         self.turn = True
 
     def ii_attack(self, enemy, ally):
-
-        self.data[enemy[0]][ally[0]].target()
-        self.data[enemy[1]][ally[1]].target()
+        self.data[enemy[1]][enemy[0]].target()
+        self.data[ally[1]][ally[0]].target()
+        for _ in range(30):
+            self.update()
+            self.render()
+            pygame.display.flip()
+            time.sleep(0.02)
         self.normalize()
+        self.play_sound(self.units_data[enemy][0])
+        self.units_data[enemy][1] = 0
         self.units_data[ally][0].health -= self.units_data[enemy][0].attack
 
     def ii_move(self, enemy):
@@ -461,9 +757,14 @@ class BattleField:
                 if line < 0 or column < 0 or line > 9 or column > 9 or h == enemy:
                     pass
                 else:
-                    if h not in list(self.units_data.keys()) and self.data[column][line].kind != 'Mountain':
+                    if h not in list(self.units_data.keys()) and self.data[line][column].kind != 'Mountain':
                         self.data[line][column].move()
-                        variants.append((line, column))
+                        variants.append((column, line))
+        for _ in range(30):
+            self.update()
+            self.render()
+            pygame.display.flip()
+            time.sleep(0.02)
         self.normalize()
         pos = random.choice(variants)
         pos_x = pos[0] * self.cell_size + self.left
@@ -473,33 +774,24 @@ class BattleField:
         del self.units_data[enemy]
 
     def update(self):
-        enemies = 0
+        allies = 0
         if not self.move and not self.attack:
             self.normalize()
         for key in list(self.units_data.keys()):
-            if self.units_data[key][0].is_enemy:
-                enemies += 1
+            if not self.units_data[key][0].is_enemy:
+                allies += 1
             if self.units_data[key][0].health <= 0:
                 self.units_data[key][0].die(self.particles_group, self.all_sprites)
                 del self.units_data[key]
             elif self.units_data[key][1] < self.units_data[key][2]:
                 self.units_data[key][1] += 1
                 self.units_data[key][0].update()
-        if enemies == 0:
+        if allies == 0:
             self.exit += 1
         if self.exit == 35:
-            pygame.quit()
+            finalscreen().fail()
+            terminate()
         self.particles_group.update()
-
-    def scor(self):
-        d = 10000
-        for i in range(10):
-            for u in range(10):
-                if tuple([i, u]) in self.units_data.keys():
-                    if not self.units_data[tuple([i, u])][0].is_enemy:
-                        d += 2000
-        return d - self.hod * 100
-
 
 
 def load_game(map_name, surface):
@@ -513,3 +805,32 @@ def load_game(map_name, surface):
         unit = unit.split()
         field.add_unit(str(unit[0]), int(unit[1]), int(unit[2]), bool(int(unit[3])))
     return field
+
+
+d = StartScreen()
+mappy = d.start()
+WIDTH, HEIGHT = 1000, 1000
+SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
+screen_size = (WIDTH, HEIGHT)
+screen = pygame.display.set_mode(screen_size)
+clock = pygame.time.Clock()
+pygame.display.set_caption('Война')
+all_sprites = pygame.sprite.Group()
+field = load_game('map_' + str(mappy), screen)
+pygame.display.flip()
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            field.tap_dispatcher(event.pos, event.button)
+    field.update()
+    try:
+        screen.fill((0, 0, 0))
+    except pygame.error:
+        terminate()
+    field.render()
+    clock.tick(FPS)
+    pygame.display.flip()
+terminate()
